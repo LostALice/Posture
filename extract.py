@@ -21,7 +21,7 @@ class PostureDetection(object):
             min_detection_confidence=self.min_detection_confidence,
             min_tracking_confidence=self.min_tracking_confidence)
 
-    def extract_pose(self, image: MatLike) -> tuple[MatLike, float | None]:
+    def extract_pose(self, image: MatLike, land_mark: bool=False, remove_bg: bool=False) -> tuple[MatLike, float | None]:
         img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, (500, 500))
         results = self.mp_pose.process(img)
@@ -53,7 +53,7 @@ if __name__ == "__main__":
     official_video = "./official.mp4"
 
     cap = cv2.VideoCapture(official_video)
-    cap2 = cv2.VideoCapture(0)
+    cap2 = cv2.VideoCapture(test_video)
 
     pose_detect = PostureDetection()
     while cap.isOpened() and cap2.isOpened():
