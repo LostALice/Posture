@@ -1,6 +1,7 @@
 # Code by AkinoAlice@TyrantRey
 
 from cv2.typing import MatLike
+from typing import Tuple
 
 import mediapipe as mp
 import numpy as np
@@ -8,23 +9,47 @@ import time
 import cv2
 
 
+class Report(object):
+    def __init__(self) -> None:
+        self.name = ""
+
+    def add_frame(self, frame: MatLike, frame_time: int) -> None:
+        ...
+
+    def generate_report(self, results: list = []) -> None:
+        ...
+
+
 class PostureDetection(object):
     def __init__(self) -> None:
         self.mp_drawing = mp.solutions.drawing_utils
         self.mp_drawing_styles = mp.solutions.drawing_styles
-
+        self.image_size = (500, 500)
         self.min_detection_confidence = 0.3
         self.min_tracking_confidence = 0.3
 
         self.pose = mp.solutions.pose
         self.mp_pose = mp.solutions.pose.Pose(
+            enable_segmentation=True,
             min_detection_confidence=self.min_detection_confidence,
             min_tracking_confidence=self.min_tracking_confidence)
 
-    def extract_pose(self, image: MatLike, land_mark: bool=False, remove_bg: bool=False) -> tuple[MatLike, float | None]:
-        img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        img = cv2.resize(img, (500, 500))
-        results = self.mp_pose.process(img)
+        # self.background = cv2.resize(
+        #     cv2.imread("./background.jpg"), (self.image_size[1], self.image_size[0]))
+        self.background = np.zeros((self.image_size[1], self.image_size[0], 3), dtype=np.uint8)
+
+    def extract_pose(self, image: MatLike, remove_bg: bool = True) -> Tuple[MatLike, float]:
+        img = cv2.resize(image, self.image_size)
+        rgb_img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        results = self.mp_pose.process(rgb_img)
+
+        if not results.pose_landmarks is None and remove_bg:
+            condition = np.stack((results.segmentation_mask,) * 3, axis=-1) > 0.1
+            img = np.where(condition, img, self.background)
+
+        if results.pose_landmarks is None:
+            return img, None
 
         self.mp_drawing.draw_landmarks(
             img,
@@ -32,10 +57,8 @@ class PostureDetection(object):
             self.pose.POSE_CONNECTIONS,
             landmark_drawing_spec=self.mp_drawing_styles.get_default_pose_landmarks_style())
 
-        if results.pose_landmarks is None:
-            return img, None
-
-        key_points = np.array([[landmark.x, landmark.y] for landmark in results.pose_landmarks.landmark])
+        key_points = np.array([[landmark.x, landmark.y]
+                              for landmark in results.pose_landmarks.landmark])
 
         return img, key_points
 
@@ -67,7 +90,7 @@ if __name__ == "__main__":
 
         processed_image, pose_point = pose_detect.extract_pose(img)
         processed_image2, pose_point2 = pose_detect.extract_pose(img2)
-        print(processed_image, processed_image2)
+        # print(processed_image, processed_image2)
         joined_image = cv2.vconcat([processed_image, processed_image2])
 
         fps = 1 / (time.time() - start)
