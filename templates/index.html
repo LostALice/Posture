@@ -9,28 +9,34 @@
 <input戈>
     <h1>Video Recorder</h1>
     <video id="video" width="320" height="240" autoplay></video>
+    <button id="stopButton">Stop Recording</button>
 
     <script>
-        const videoElement = document.getElementById("video");
+        const videoElement = document.getElementById("video")
         const youtubeURL = prompt("Please enter a youtube video URL")
 
         alert("start recording")
         navigator.mediaDevices.getUserMedia({ video: true, audio: true })
             .then(stream => {
-                videoElement.srcObject = stream;
-                const mediaRecorder = new MediaRecorder(stream);
-                let chunks = [];
+
+                videoElement.srcObject = stream
+                const mediaRecorder = new MediaRecorder(stream)
+                document.getElementById("stopButton").addEventListener("click", () => {
+                    mediaRecorder.stop()
+                    alert("uploaded and processing, please wait...")
+                })
+                let chunks = []
 
                 mediaRecorder.ondataavailable = event => {
-                    chunks.push(event.data);
-                };
+                    chunks.push(event.data)
+                }
 
                 mediaRecorder.onstop = () => {
-                    const blob = new Blob(chunks, { "type": "video/mp4" });
-                    chunks = [];
-                    const formData = new FormData();
-                    formData.append("video", blob, "video.mp4");
-                    formData.append("url", youtubeURL);
+                    const blob = new Blob(chunks, { "type": "video/mp4" })
+                    chunks = []
+                    const formData = new FormData()
+                    formData.append("video", blob, "video.mp4")
+                    formData.append("url", youtubeURL)
 
                     url: youtubeURL
                     fetch("/upload", {
@@ -38,27 +44,18 @@
                         body: formData
                     }).then(response => {
                         if (response.ok) {
-                            alert("Video uploaded successfully");
-                            console.log(response)
-                            window.location.replace("http://127.0.0.1:5000/results")
+                            alert("Video uploaded successfully")
+                            window.location.replace("/results")
                         } else {
-                            alert("Video upload failed");
+                            alert("Video upload failed")
                         }
-                    });
-                };
-
-                // Start recording immediately when the page is loaded
-                mediaRecorder.start();
-
-                // Stop recording after 10 seconds
-                setTimeout(() => {
-                    mediaRecorder.stop();
-                }, 10000); // 10 seconds
+                    })
+                }
+                mediaRecorder.start()
             })
             .catch(error => {
-                console.error("Error accessing media devices.", error);
-            });
-
+                console.error("Error accessing media devices.", error)
+            })
     </script>
     </body>
 

@@ -6,7 +6,7 @@ from posture import *
 
 app = Flask(__name__)
 
-def execute():
+def process_video():
     test_video = "./video/uploaded_video.mp4"
     # test_video = "./video/youtube.mp4"
     official_video = "./video/youtube.mp4"
@@ -20,10 +20,6 @@ def execute():
     try:
         count = 0
         while cap.isOpened() and cap2.isOpened():
-            # skip frames
-            print(f"processing frame: {count}")
-            if count == 50:
-                break
             count += 1
             start = time.time()
 
@@ -36,27 +32,28 @@ def execute():
             processed_image, pose_point = pose_detect.extract_pose(img)
             processed_image2, pose_point2 = pose_detect.extract_pose(img2)
 
-            joined_image = cv2.vconcat([processed_image, processed_image2])
+            # joined_image = cv2.vconcat([processed_image, processed_image2])
 
             fps = 1 / (time.time() - start)
             score = pose_detect.calculate_similarity(pose_point, pose_point2)
+            print(count, fps, score)
 
-            cv2.putText(
-                joined_image,
-                f"FPS: {fps:.1f}| Score:{score:.1f}",
-                (50, 50),
-                cv2.FONT_HERSHEY_COMPLEX_SMALL,
-                1,
-                (255, 255, 255),
-                1,
-                cv2.LINE_AA
-            )
-            cv2.imshow("test", joined_image)
+            # cv2.putText(
+            #     joined_image,
+            #     f"FPS: {fps:.1f}| Score:{score:.1f}",
+            #     (50, 50),
+            #     cv2.FONT_HERSHEY_COMPLEX_SMALL,
+            #     1,
+            #     (255, 255, 255),
+            #     1,
+            #     cv2.LINE_AA
+            # )
+            # cv2.imshow("test", joined_image)
 
             reporter.add_frame(score)
 
-            if cv2.waitKey(5) == ord("q"):
-                break
+            # if cv2.waitKey(5) == ord("q"):
+            #     break
     except:
         pass
     finally:
@@ -84,7 +81,9 @@ async def upload_video():
     VideoDownloader(url).download()
     video.save("./video/uploaded_video.mp4")
 
-    return "good", 200
+    process_video()
+
+    return "success", 200
 
 
 if __name__ == "__main__":

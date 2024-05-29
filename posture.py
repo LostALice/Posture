@@ -55,9 +55,11 @@ class Report(object):
         drawing.add(horizontalLineChart)
         content.append(drawing)
 
+        print(self.fail_count, len(self.score_time_line))
+
         # statistics
         content.append(Paragraph(f"Average Score: {sum(self.score_time_line)/len(self.score_time_line):.2f}"))
-        content.append(Paragraph(f"Average passing rate: {self.fail_count/len(self.score_time_line) * 100: .2f}%"))
+        content.append(Paragraph(f"Average passing rate: {((self.fail_count/len(self.score_time_line))-1) * 100: .2f}%"))
 
         pdf.build(content)
 
